@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>in.culcate Realms Studio</title>
+	<style>
+		:root {
+			--ink: #f7efe2;
+			--muted: #b99f83;
+			--bg: #080604;
+			--panel: rgba(28, 18, 12, 0.72);
+			--line: rgba(255, 201, 122, 0.18);
+			--gold: #ffbf5c;
+			--ember: #ff5b2e;
+			--green: #82f6b4;
+			--red: #ff776f;
+			--blue: #84c7ff;
+		}
+		* { box-sizing: border-box; }
+		html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif; }
+		body {
+			background:
+				radial-gradient(circle at 18% 10%, rgba(255, 91, 46, 0.18), transparent 34%),
+				radial-gradient(circle at 72% 28%, rgba(255, 191, 92, 0.12), transparent 30%),
+				linear-gradient(135deg, #080604, #130b07 48%, #050403);
+			overflow: hidden;
+		}
+		body:before {
+			content: "";
+			position: fixed; inset: 0;
+			background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+			background-size: 38px 38px;
+			mask-image: radial-gradient(circle at center, black, transparent 78%);
+			pointer-events: none;
+		}
+		.app { height: 100vh; display: grid; grid-template-columns: 320px minmax(580px, 1fr) 390px; gap: 14px; padding: 14px; }
+		.panel, .canvas, .agent { border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(18px); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.36); min-height: 0; }
+		.panel, .agent { display: flex; flex-direction: column; overflow: hidden; }
+		.brand { padding: 22px 22px 16px; border-bottom: 1px solid var(--line); }
+		.eyebrow { color: var(--gold); letter-spacing: .18em; text-transform: uppercase; font: 700 11px ui-sans-serif, system-ui; }
+		h1 { margin: 8px 0 6px; font-size: 29px; line-height: .92; letter-spacing: -.04em; }
+		.sub { color: var(--muted); font: 13px/1.45 ui-sans-serif, system-ui; }
+		.form { padding: 18px 18px 8px; overflow: auto; }
+		label { display: block; color: #e9d5bc; font: 700 12px ui-sans-serif, system-ui; margin: 14px 0 7px; letter-spacing: .02em; }
+		textarea, input, select { width: 100%; border: 1px solid rgba(255, 201, 122, .2); background: rgba(8, 6, 4, .72); color: var(--ink); border-radius: 14px; padding: 11px 12px; font: 13px/1.35 ui-sans-serif, system-ui; outline: none; }
+		textarea { min-height: 126px; resize: vertical; }
+		.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+		button { border: 0; color: #180c05; background: linear-gradient(135deg, var(--gold), #ff8a39); border-radius: 14px; padding: 12px 14px; font: 800 12px ui-sans-serif, system-ui; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; box-shadow: 0 10px 28px rgba(255, 117, 46, .22); }
+		button.secondary { background: rgba(255, 255, 255, .08); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+		.actions { display: grid; gap: 9px; padding: 12px 18px 18px; }
+		.canvas { position: relative; overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; }
+		.topbar { padding: 20px 22px 14px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--line); }
+		.title { font-size: 30px; letter-spacing: -.04em; line-height: 1; }
+		.status { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+		.pill { border: 1px solid rgba(255,255,255,.12); color: #efd6b6; background: rgba(255,255,255,.06); border-radius: 999px; padding: 7px 10px; font: 700 11px ui-sans-serif, system-ui; }
+		.stage { padding: 20px; overflow: auto; }
+		.graph { display: grid; grid-template-columns: repeat(3, minmax(170px, 1fr)); gap: 14px; }
+		.node { position: relative; border: 1px solid rgba(255, 201, 122, .22); background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025)); border-radius: 20px; padding: 15px; min-height: 150px; overflow: hidden; }
+		.node:before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 16% 0%, rgba(255,191,92,.19), transparent 40%); pointer-events:none; }
+		.node h3 { margin: 0 0 7px; font-size: 17px; position:relative; }
+		.node p { margin: 0; color: var(--muted); font: 12px/1.45 ui-sans-serif, system-ui; position:relative; }
+		.kv { margin-top: 12px; display: grid; gap: 5px; position: relative; font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; color: #f9ddb4; }
+		.gate { border-left: 3px solid var(--gold); }
+		.gate.warn { border-left-color: var(--red); }
+		.timeline { border-top: 1px solid var(--line); padding: 13px 18px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+		.step { background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 8px; font: 11px ui-sans-serif, system-ui; color: #dec5aa; }
+		.step.active { background: rgba(255,191,92,.15); color: var(--ink); border-color: rgba(255,191,92,.35); }
+		.agentHeader { padding: 20px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; }
+		.avatar { width: 42px; height: 42px; border-radius: 15px; background: conic-gradient(from 220deg, var(--gold), var(--ember), #5b1b10, var(--gold)); box-shadow: 0 0 38px rgba(255,91,46,.26); }
+		.agentName { font-size: 18px; letter-spacing: -.02em; }
+		.agentRole { color: var(--muted); font: 12px ui-sans-serif, system-ui; }
+		.messages { padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+		.msg { padding: 12px 13px; border-radius: 16px; font: 13px/1.45 ui-sans-serif, system-ui; border: 1px solid rgba(255,255,255,.08); }
+		.msg.agentMsg { background: rgba(255,191,92,.09); }
+		.msg.userMsg { margin-left: 32px; background: rgba(132,199,255,.09); }
+		.chatbox { padding: 14px; display: grid; grid-template-columns: 1fr auto; gap: 8px; border-top: 1px solid var(--line); }
+		.chatbox input { height: 44px; }
+		pre { white-space: pre-wrap; word-break: break-word; color: #e9d7c0; font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0; }
+		.artifactDrawer { position:absolute; left:22px; right:22px; bottom:76px; max-height:42%; overflow:auto; border:1px solid rgba(255,191,92,.28); background:rgba(5,4,3,.92); border-radius:18px; padding:14px; box-shadow:0 20px 60px rgba(0,0,0,.46); display:none; }
+		.artifactDrawer.open { display:block; }
+		.small { color: var(--muted); font-size: 11px; }
+	</style>
+</head>
+<body>
+	<main class="app">
+		<section class="panel">
+			<div class="brand">
+				<div class="eyebrow">in.culcate Studio OS</div>
+				<h1>Realms: Seed → Screen</h1>
+				<div class="sub">Local deterministic prototype. No API keys. The Studio Director panel talks against the generated artifact pack.</div>
+			</div>
+			<div class="form">
+				<label for="seed">Seed / Brief</label>
+				<textarea id="seed">A night-shift nurse discovers the hospital's AI triage system is hiding deaths.</textarea>
+				<label for="realmName">Realm Name</label>
+				<input id="realmName" value="Triage After Midnight" />
+				<div class="row">
+					<div><label for="format">Format</label><select id="format"><option value="short">Short Film</option><option value="feature">Feature</option><option value="series">Series</option><option value="micro">Microdrama</option><option value="branded">Branded</option></select></div>
+					<div><label for="runtime">Runtime</label><input id="runtime" type="number" value="10" /></div>
+				</div>
+				<div class="row">
+					<div><label for="locations">Max Locations</label><input id="locations" type="number" value="3" /></div>
+					<div><label for="chars">Characters</label><input id="chars" type="number" value="4" /></div>
+				</div>
+				<label for="audience">Audience</label>
+				<input id="audience" value="adult contained-thriller viewers" />
+			</div>
+			<div class="actions">
+				<button id="generateBtn">Generate Artifact Pack</button>
+				<button class="secondary" id="gateBtn">Evaluate Script Lock Gate</button>
+				<button class="secondary" id="drawerBtn">Open JSON Artifact Drawer</button>
+			</div>
+		</section>
+		<section class="canvas">
+			<div class="topbar">
+				<div><div class="eyebrow">Artifact Canvas</div><div class="title" id="projectTitle">No Realm generated yet</div><div class="small" id="projectId">waiting for seed</div></div>
+				<div class="status" id="statusPills"><span class="pill">offline</span><span class="pill">no credentials</span><span class="pill">human gates pending</span></div>
+			</div>
+			<div class="stage"><div class="graph" id="graph"></div></div>
+			<div class="artifactDrawer" id="drawer"><pre id="jsonOut"></pre></div>
+			<div class="timeline" id="timeline"></div>
+		</section>
+		<aside class="agent">
+			<div class="agentHeader"><div class="avatar"></div><div><div class="agentName">Studio Director Agent</div><div class="agentRole">Conversational side panel. Ask about gates, scenes, risks, next actions.</div></div></div>
+			<div class="messages" id="messages">
+				<div class="msg agentMsg">I’m online locally. Generate a Realm and I’ll reason over the ProjectCharter, EvidencePlan, CreativeBible, SceneOutline, GateChecklist and ExportPackage.</div>
+			</div>
+			<div class="chatbox"><input id="chatInput" placeholder="Ask: what blocks script lock?" /><button id="sendBtn">Send</button></div>
+		</aside>
+	</main>
+	<script>
+		let pack = null;
+		const $ = (id) => document.getElementById(id);
+		function hash(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return (h>>>0).toString(16).padStart(8,'0'); }
+		function title(seed){ return seed.split(/[.!?]/)[0].trim().split(/\s+/).slice(0,7).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ') || 'Untitled Realm'; }
+		function keywords(seed){ const stop=new Set('the a an and or but of to in on for with is are was were be as at by it this that who what when where why how about into from'.split(' ')); const out=[]; for(const raw of seed.toLowerCase().split(/[^a-z0-9]+/)){ if(raw.length>3&&!stop.has(raw)&&!out.includes(raw)) out.push(raw); if(out.length>=8) break; } return out; }
+		function checksum(obj){ return 'sha256:'+hash(JSON.stringify(obj))+hash(JSON.stringify(obj).split('').reverse().join(''))+hash(JSON.stringify(obj).length.toString()); }
+		function makePack(){
+			const seed=$('seed').value.trim(); const kws=keywords(seed); const projectId='proj_'+hash(seed); const runtime=Number($('runtime').value)||10; const format=$('format').value; const sceneCount=format==='micro'?5:format==='branded'?6:format==='short'?10:format==='series'?8:12; const chars=Math.max(2, Math.min(Number($('chars').value)||4, 4)); const locs=Math.max(1, Math.min(Number($('locations').value)||3, 4));
+			const projectCharter={projectId, realmName:$('realmName').value||title(seed), entryPath:'seed', formatPolicyId:format==='micro'?'microdrama_v1':format==='branded'?'branded_short_v1':format==='short'?'short_film_v1':format+'_v1', format, runtimeTargetMinutes:runtime, language:'English', targetAudience:$('audience').value, privacyPolicy:{allowExternalLlm:false, allowWebResearch:false}, productionConstraints:{complexityTarget:locs<=3?'contained':'moderate', maxLocations:locs, maxPrincipalCharacters:chars}, unknownsRegister:[{field:'evidence',question:'Which claims need sources before lock?',blocksNextStage:true},{field:'rights',question:'Any adaptation/living-person risk?',blocksNextStage:true}]};
+			const evidencePlan={projectId, planId:'eplan_'+hash(seed), researchMode:'none', questions:[{lane:'audience_comparable',question:'What does this audience already binge?', storyUse:'hook and ending pressure'},{lane:'production_feasibility',question:'Can it stay inside location/character caps?', storyUse:'scene design'}], blockedClaims:['No legal conclusion generated.']};
+			const characters=Array.from({length:chars},(_,i)=>({characterId:'char_'+hash(seed+i), name:i?'Principal '+(i+1):'Protagonist', want:i?'pressure the protagonist':'expose the hidden truth', need:'choose truth with cost', flaw:'avoids irreversible confrontation'}));
+			const creativeBible={projectId, creativeBibleId:'bible_'+hash(seed), storyConstitution:{premise:seed, centralDramaticQuestion:`Can the protagonist confront ${kws[0]||'the system'} before the cost becomes irreversible?`, endingPrinciple:'Answer through action, not exposition.', forbiddenMoves:['no legal clearance claims','no auto-approved gates']}, characters, worldBible:{locations:Array.from({length:locs},(_,i)=>'Location '+(i+1)), sensoryPalette:kws.slice(0,4)}, visualSonicGrammar:{visualThesis:`Externalize ${kws[0]||'pressure'} through repeated image systems.`, prohibitions:['generic cinematic mood language','living creator imitation']}};
+			const scenes=Array.from({length:sceneCount},(_,i)=>({sceneId:'sc_'+String(i+1).padStart(3,'0'), sequenceId:'seq_'+String(Math.ceil((i+1)/3)).padStart(2,'0'), order:i+1, sluglineProposal:`INT./EXT. LOCATION ${(i%locs)+1} - TIME`, purpose:i?'Escalate, reveal, or force choice':'Open with pressure and promise', conflict:`Obstacle blocks objective ${i+1}`, turn:`New information changes choice ${i+1}`, valueShift:i%2?'certainty → doubt':'safety → danger', estimatedRuntimeMinutes:Math.round((runtime/sceneCount)*10)/10, necessityTest:{functions:['advance_action','force_choice','reveal_character'],passes:true}}));
+			const sceneOutline={projectId, sceneOutlineId:'outline_'+hash(seed), estimatedTotalRuntimeMinutes:scenes.reduce((a,s)=>a+s.estimatedRuntimeMinutes,0), scenes};
+			const gateChecklist={projectId,gates:['G0 Charter Approval','G1 Evidence Plan Approval','G2 Creative Bible Approval','G3 Scene Outline Lock','G4 Export Package Approval'].map((name,i)=>({gateId:name.slice(0,2), name, validationStatus:'warn', openIssues:['Pending human approval'], humanDecisionOptions:['approve','edit','branch','reject','defer']}))};
+			const artifacts={projectCharter,evidencePlan,creativeBible,sceneOutline,gateChecklist}; const artifactVersions=Object.entries(artifacts).map(([k,v])=>({artifactId:k, artifactVersionId:'av_'+hash(k+JSON.stringify(v)), contentHash:checksum(v), status:'generated'}));
+			return {projectId,status:'generated_mock_artifact_pack',artifacts,artifactVersions,exportPackage:{projectId,exportPackageId:'export_'+hash(seed),openGates:['G0','G1','G2','G3','G4'],warnings:['Human gates pending','No external research performed']},checksums:Object.fromEntries(Object.entries(artifacts).map(([k,v])=>[k,checksum(v)])),validationSummary:{hardErrors:[],warnings:['Human gates pending']}};
+		}
+		function nodeCard(name, text, meta, cls='') { return `<article class="node ${cls}"><h3>${name}</h3><p>${text}</p><div class="kv">${meta.map(m=>`<span>${m}</span>`).join('')}</div></article>`; }
+		function render(){ const a=pack.artifacts; $('projectTitle').textContent=a.projectCharter.realmName; $('projectId').textContent=pack.projectId+' · '+a.projectCharter.formatPolicyId; $('statusPills').innerHTML=`<span class="pill">${pack.status}</span><span class="pill">${a.sceneOutline.scenes.length} scenes</span><span class="pill">${pack.artifactVersions.length} versioned artifacts</span>`; $('graph').innerHTML=[nodeCard('Project Charter','Intent, format, audience, constraints, privacy posture.', [`runtime ${a.projectCharter.runtimeTargetMinutes}m`,`audience ${a.projectCharter.targetAudience || 'unset'}`]), nodeCard('Evidence Plan','Bounded questions, lanes, claims blocked from fake certainty.', [`${a.evidencePlan.questions.length} questions`, a.evidencePlan.blockedClaims[0]]), nodeCard('Creative Bible','Story constitution, characters, world, visual/sonic grammar.', [`${a.creativeBible.characters.length} principals`, `${a.creativeBible.worldBible.locations.length} locations`]), nodeCard('Scene Outline','Dramatic scene cards with conflict, turn and value shift.', [`${a.sceneOutline.scenes.length} scene cards`, `${a.sceneOutline.estimatedTotalRuntimeMinutes}m estimate`]), nodeCard('Gate Checklist','Human approval ladder. Nothing auto-locks.', [`${a.gateChecklist.gates.length} open gates`, 'decision: pending'], 'gate warn'), nodeCard('Export Package','Manifest, version envelopes and checksums.', [`${pack.artifactVersions[0].contentHash.slice(0,22)}…`, `${Object.keys(pack.checksums).length} checksums`])].join(''); $('timeline').innerHTML=['Seed','Charter','Research','Bible','Scenes','Script Lock'].map((s,i)=>`<div class="step ${i<5?'active':''}">${s}</div>`).join(''); $('jsonOut').textContent=JSON.stringify(pack,null,2); }
+		function addMsg(text, cls='agentMsg'){ const d=document.createElement('div'); d.className='msg '+cls; d.textContent=text; $('messages').appendChild(d); $('messages').scrollTop=$('messages').scrollHeight; }
+		function answer(q){ if(!pack) return 'Generate a Realm first, then I can inspect artifacts.'; const lower=q.toLowerCase(); const gates=pack.artifacts.gateChecklist.gates; if(lower.includes('lock')||lower.includes('block')) return `Script Lock is blocked by ${gates.length} pending human gates. G3 needs the scene outline reviewed, and G4 needs export approval. I will not auto-approve locks.`; if(lower.includes('scene')) return `SceneOutline has ${pack.artifacts.sceneOutline.scenes.length} dramatic units. Each has purpose, conflict, turn, value shift and necessity test. A scene is not capped at 15 seconds.`; if(lower.includes('risk')||lower.includes('rights')) return 'Main risks: evidence still unresearched, no rights/legal clearance generated, and human approval pending. Treat this as NOT_LOCKABLE until the Director approves gates.'; if(lower.includes('next')) return 'Next action: review G0 Charter, answer evidence/rights unknowns, then approve or edit G1 before Creative Bible lock.'; return `I see ${Object.keys(pack.artifacts).length} artifacts, ${pack.artifactVersions.length} version envelopes, and ${pack.openGates?.length || 5} open gates. Ask me about scenes, locks, risks, or next actions.`; }
+		$('generateBtn').onclick=()=>{ pack=makePack(); render(); addMsg(`Generated ${pack.artifactVersions.length} versioned artifacts for ${pack.artifacts.projectCharter.realmName}. Human gates remain pending.`, 'agentMsg'); };
+		$('gateBtn').onclick=()=>{ if(!pack) pack=makePack(); render(); addMsg('Gate evaluation: REQUEST_MORE. Script Lock cannot pass while G0-G4 are pending. Next action: approve/edit Charter and Evidence Plan first.', 'agentMsg'); };
+		$('drawerBtn').onclick=()=> $('drawer').classList.toggle('open');
+		$('sendBtn').onclick=()=>{ const q=$('chatInput').value.trim(); if(!q) return; addMsg(q,'userMsg'); $('chatInput').value=''; setTimeout(()=>addMsg(answer(q),'agentMsg'),120); };
+		$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter') $('sendBtn').click();});
+		$('generateBtn').click();
+	</script>
+</body>
+</html>
